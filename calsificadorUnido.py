@@ -98,7 +98,7 @@ SALUD:
 - GenIA: Resumen expediente, Notas médicas
 - Agéntica: Agente administrativo, Soporte clínico
 
-si no pertenece a estos sectores y usa IA solo dime que no funciona con IA y cualquier otro sector puedes mencionar que no pertenece a estos
+si no pertenece a estos sectores y usa IA solo dime que no funciona con IA y cualquier otro sector puedes mencionar que no pertenece a estos y descartarlo
 
 Responde JSON EXACTO (sin markdown):
 {json_schema}
@@ -289,11 +289,12 @@ for r in resumenes:
 
 df_final = pd.DataFrame(filas)
 
+# Filtrar empresas que **sí proporcionan IA**
+df_final = df_final[df_final["Proporciona_IA"].str.lower() != "no"]
+
 # ordenar por sector y tipo de IA
 df_final = df_final.sort_values(by=["Sector", "Tipo_IA"], ascending=True)
 
 df_final.to_excel("resumen_websites.xlsx", index=False)
 
 print("Resúmenes guardados en resumen_websites.xlsx")
-
-driver.quit()
