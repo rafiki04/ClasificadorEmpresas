@@ -98,7 +98,7 @@ SALUD:
 - GenIA: Resumen expediente, Notas médicas
 - Agéntica: Agente administrativo, Soporte clínico
 
-si no pertenece a estos sectores y usa IA solo dime que no funciona con IA y cualquier otro sector puedes mencionar que no pertenece a estos y descartarlo
+si no pertenece a estos sectores y usa IA solo dime que no funciona con IA y cualquier otro sector puedes mencionar que no pertenece a estos solo con NO y descartarlo
 
 Responde JSON EXACTO (sin markdown):
 {json_schema}
@@ -222,7 +222,7 @@ for idx, row in enumerate(df.itertuples(), start=1):
             "para el sector de Retail o ecommerce clasificas por el tipo de IA que usan o proporcionan ademas si este sector si realiza Forecasting de demanda, pricing dinamico,Product Description, Atencion o venta conversacional, Agentes de Operaciones en tienda, Agentes de Marketing automatizado"
             "para el sector de energia clasificas que tipo de IA usa o proporciona y luego clasificas si hacen prediccion de demanda, Deteccion de perdidas, Asistencia de soporte tecnico, Documentacion y analisis de insepcciones, Agentes de despacho, Agentes de atencion para fallas masivas"
             "para el sector de salud clasificas que tipo de IA usa o proporciona despues clasificas si hacen Diagnostico por imagenes asistido, modelos de riesgos de enfermedades, Resumenes de expediente clinico, generacion de notas medicas y documentacion, Agente administrativos, Agentes de soporte"
-            "Y LOS CASOS EN DONDE NO PROPORCIONEN IA NO LOS COLOQUES. DESCARTA ESAS EMPRESAS"},
+            "Y LOS CASOS EN DONDE NO PROPORCIONEN IA NO LOS COLOQUES. DESCARTA ESAS EMPRESAS Y CUANDO LOS CASOS DE USO NO SEAN SOLO MENCIONA QUE NO APLICA"},
             {"role": "user", "content": prompt}
         ]
     )
