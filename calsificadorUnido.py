@@ -21,7 +21,7 @@ chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64
 driver = webdriver.Chrome(options=chrome_options)
 
 # --- CARGAR EXCEL ---
-archivo = r'C:\Users\cris_\Downloads\clasificador\wikicid-classifier\wikicid-classifier\empresas_testing.xlsx'
+archivo = r'C:\Users\cris_\Downloads\clasificacion_git\empresas_wikicid.xlsx'
 df = pd.read_excel(archivo)
 
 # --- FUNCIONES AUXILIARES ---
@@ -52,71 +52,168 @@ def consultar_crunchbase(nombre, api_key):
     except Exception:
         return None
 
-def analizar_ia(nombre, resumen, contenido_web=""):
+#def analizar_ia(nombre, resumen, contenido_web=""):
 
     # Construimos el JSON como texto normal, NO dentro de un f-string
-    json_schema = """
+#    json_schema = """
+#{
+#  "sectores": ["Sector"],
+#  "tipo_ia": "IA tradicional ML clásico" o "IA Generativa (Gen IA)" o "IA Agéntica",
+#  "casos_uso": {"Sector": ["Caso exacto"]},
+#  "descripcion_relevante": "Qué hace y cómo usa IA",
+#  "proporciona_ia": "sí" o "no",
+#  "nivel_ajuste": 1,
+#  "observaciones": ""
+#}
+#"""
+
+#    # Ahora sí usamos f-string, pero el JSON ya está fuera
+#    prompt = f"""
+#Analiza si esta empresa ofrece soluciones de Inteligencia Artificial.
+
+#**INFORMACIÓN:**
+#Nombre: {nombre}
+#Descripción resumida: {resumen}
+#Contenido web: {contenido_web[:1000]}
+
+#**SECTORES Y CASOS DE IA:**
+
+#FINANCIERO:
+#- ML: Fraude tiempo real, Scoring crediticio
+#- GenIA: Agente LLM bancario, Resumen KYC/auditorías
+#- Agéntica: Agente AML/KYC, Agente financiero autoservicio
+
+#TELECOMUNICACIONES:
+#- ML: Predicción churn, Optimización red
+#- GenIA: Agentes atención (WhatsApp/voz), Resumen tickets
+#- Agéntica: Agente postventa, Agente operaciones red
+
+#RETAIL:
+#- ML: Forecasting demanda, Pricing dinámico
+#- GenIA: Product descriptions, Atención conversacional
+#- Agéntica: Agentes tiendas, Marketing automatizado
+
+#SALUD:
+#- ML: Diagnóstico imágenes, Modelos riesgo
+#- GenIA: Resumen expediente, Notas médicas
+#- Agéntica: Agente administrativo, Soporte clínico
+
+#si no pertenece a estos sectores y usa IA solo dime que no funciona con IA y cualquier otro sector puedes mencionar que no pertenece a estos solo con NO y descartarlo
+
+#Responde JSON EXACTO (sin markdown):
+#{json_schema}
+#"""
+
+#   response = client.chat.completions.create(
+#        model="gpt-4.1-mini",
+#        messages=[
+#            {"role": "system", "content": "Eres un asistente experto en empresas y su informacion en sus sectores de Salud,Retail, Comunicacione y financiero que clasifica empresas según uso de Inteligencia Artificial y sector."},
+#            {"role": "user", "content": prompt}
+#        ]
+#    )
+
+#    try:
+#        resultado = response.choices[0].message.content
+#        return json.loads(resultado)
+#    except Exception:
+#        return {"error": "No se pudo parsear JSON", "raw_response": response.choices[0].message.content}
+
+
+def procesar_todo(nombre, fuentes):
+    """
+    Genera resumen + análisis de IA + clasificación en una sola llamada.
+    """
+
+    # Unir todas las fuentes en texto
+    texto_fuentes = ""
+    for fuente, contenido in fuentes.items():
+        if contenido:
+            texto_fuentes += f"\n--- {fuente} ---\n{contenido[:2000]}\n"
+
+    schema_json = """
 {
-  "sectores": ["Sector"],
-  "tipo_ia": "IA tradicional ML clásico" o "IA Generativa (Gen IA)" o "IA Agéntica",
-  "casos_uso": {"Sector": ["Caso exacto"]},
-  "descripcion_relevante": "Qué hace y cómo usa IA",
-  "proporciona_ia": "sí" o "no",
-  "nivel_ajuste": 1,
+  "resumen": "Resumen profesional basado en las fuentes",
+  "sector": "Financiero | Telecomunicaciones | Retail | Energia | Salud | No aplica",
+  "tipo_ia": "IA tradicional | IA Generativa | IA Agéntica | No aplica",
+  "proporciona_ia": "sí | no",
+  "casos_uso": {"Sector": ["caso exacto"]},
+  "descripcion_relevante": "Cómo usa o proporciona IA la empresa",
   "observaciones": ""
 }
 """
 
-    # Ahora sí usamos f-string, pero el JSON ya está fuera
     prompt = f"""
-Analiza si esta empresa ofrece soluciones de Inteligencia Artificial.
+Analiza la siguiente empresa basándote exclusivamente en las fuentes proporcionadas
+y luego devuelve un JSON EXACTO en español que siga el esquema de abajo.
 
-**INFORMACIÓN:**
-Nombre: {nombre}
-Descripción resumida: {resumen}
-Contenido web: {contenido_web[:1000]}
+NOMBRE DE LA EMPRESA:
+{nombre}
 
-**SECTORES Y CASOS DE IA:**
+FUENTES:
+{texto_fuentes}
 
-FINANCIERO:
-- ML: Fraude tiempo real, Scoring crediticio
-- GenIA: Agente LLM bancario, Resumen KYC/auditorías
-- Agéntica: Agente AML/KYC, Agente financiero autoservicio
+INSTRUCCIONES:
+1. Genera un RESUMEN profesional claro y conciso.
+2. Clasifica el SECTOR entre:
+   - Financiero
+   - Telecomunicaciones
+   - Retail / Ecommerce
+   - Energía
+   - Salud
+   Si no corresponde → usar "No aplica".
+3. Determina si usa o proporciona IA (sí o no).
+4. Clasifica el TIPO DE IA:
+   - IA tradicional (ML clásico)
+   - IA Generativa (Gen IA)
+   - IA Agéntica
+   - No aplica
+5. Especifica los CASOS DE USO aplicables según sector
+#**SECTORES Y CASOS DE IA:**
 
-TELECOMUNICACIONES:
-- ML: Predicción churn, Optimización red
-- GenIA: Agentes atención (WhatsApp/voz), Resumen tickets
-- Agéntica: Agente postventa, Agente operaciones red
+#FINANCIERO:
+#- ML: Fraude tiempo real, Scoring crediticio
+#- GenIA: Agente LLM bancario, Resumen KYC/auditorías
+#- Agéntica: Agente AML/KYC, Agente financiero autoservicio
 
-RETAIL:
-- ML: Forecasting demanda, Pricing dinámico
-- GenIA: Product descriptions, Atención conversacional
-- Agéntica: Agentes tiendas, Marketing automatizado
+#TELECOMUNICACIONES:
+#- ML: Predicción churn, Optimización red
+#- GenIA: Agentes atención (WhatsApp/voz), Resumen tickets
+#- Agéntica: Agente postventa, Agente operaciones red
 
-SALUD:
-- ML: Diagnóstico imágenes, Modelos riesgo
-- GenIA: Resumen expediente, Notas médicas
-- Agéntica: Agente administrativo, Soporte clínico
+#RETAIL:
+#- ML: Forecasting demanda, Pricing dinámico
+#- GenIA: Product descriptions, Atención conversacional
+#- Agéntica: Agentes tiendas, Marketing automatizado
 
-si no pertenece a estos sectores y usa IA solo dime que no funciona con IA y cualquier otro sector puedes mencionar que no pertenece a estos solo con NO y descartarlo
+#SALUD:
+#- ML: Diagnóstico imágenes, Modelos riesgo
+#- GenIA: Resumen expediente, Notas médicas
+#- Agéntica: Agente administrativo, Soporte clínico
 
-Responde JSON EXACTO (sin markdown):
-{json_schema}
+#si no pertenece a estos sectores y usa IA solo dime que no funciona con IA y cualquier otro sector puedes mencionar que no pertenece a estos solo con NO y descartarlo.
+    -
+6. Completa el JSON EXACTO:
+
+{schema_json}
+
+NO agregues comentarios, explicaciones ni texto fuera del JSON.
 """
 
     response = client.chat.completions.create(
-        model="gpt-5-mini",
+        model="gpt-4.1-mini",
         messages=[
-            {"role": "system", "content": "Eres un asistente experto en empresas y su informacion en sus sectores de Salud,Retail, Comunicacione y financiero que clasifica empresas según uso de Inteligencia Artificial y sector."},
+            {"role": "system", "content": "Eres un experto en análisis de empresas y clasificación de IA."},
             {"role": "user", "content": prompt}
         ]
     )
 
+    output = response.choices[0].message.content
+
     try:
-        resultado = response.choices[0].message.content
-        return json.loads(resultado)
-    except Exception:
-        return {"error": "No se pudo parsear JSON", "raw_response": response.choices[0].message.content}
+        return json.loads(output)
+    except:
+        return {"error": "JSON no válido", "raw": output}
+
 
 
 # --- BUCLE PRINCIPAL ---
@@ -174,12 +271,25 @@ for idx, row in enumerate(df.itertuples(), start=1):
         pass
 
 
-    prompt = f"Genera un resumen conciso y profesional sobre la empresa {nombre} usando toda la información disponible en:\n\n"
+    print(f"linea{idx}: IA procesando informacion")
 
-    for fuente, contenido in fuentes_disponibles.items():
-        prompt += f"--- {fuente} ---\n{contenido}\n\n"
 
-    prompt += "Prioriza la información más relevante y genera un resumen claro y coherente."
+    ia = procesar_todo(nombre,fuentes_disponibles)
+
+    #resumenes.append({
+    #   "Empresa": nombre,  3
+    #    "URL":url,
+    #    "IA_info":ia
+    #})
+
+    print("Resultados:", ia)
+
+    #prompt = f"Genera un resumen conciso y profesional sobre la empresa {nombre} usando toda la información disponible en:\n\n"
+
+    #for fuente, contenido in fuentes_disponibles.items():
+        #prompt += f"--- {fuente} ---\n{contenido}\n\n"
+
+    #prompt += "Prioriza la información más relevante y genera un resumen claro y coherente."
 
 
 
@@ -214,33 +324,33 @@ for idx, row in enumerate(df.itertuples(), start=1):
     # --- Generar resumen con GPT ---
     print(f"Línea {idx}: Procesando IA ({fuente})...")
     start_time = time.time()
-    respuesta = client.chat.completions.create(
-        model="gpt-5-mini",
-        messages=[
-            {"role": "system", "content": "Eres un asistente que genera resúmenes claros y concisos sobre empresas. Ademas clasificas con precision exlusivamente los siguientes sectores:Financiero, Telecomunicaciones,Retail o ecommerce,Energia y Salud. Donde en el sector finciero clasificaras que tipo de IA utiliza o proporciona la empresa para Fraude en tiempo real, Scoring crediticio, Agentes LLM para atencion y soporte bancario, Resumen de inteligencia o auditoria, Agentes AML con razonamiento, Agenetes financieros de autoservicios"
-            "para el sector de Telecomunicaciones clasificas que tipo de IA usa y proporciona y despues categorizas si hacen prediccion de churn, Optimizacion de Red, Agentes de atencion y soporte, Resumen inteligente de interacciones , Agentes de postventa multicanal, Agentes de operaciones de red"
-            "para el sector de Retail o ecommerce clasificas por el tipo de IA que usan o proporcionan ademas si este sector si realiza Forecasting de demanda, pricing dinamico,Product Description, Atencion o venta conversacional, Agentes de Operaciones en tienda, Agentes de Marketing automatizado"
-            "para el sector de energia clasificas que tipo de IA usa o proporciona y luego clasificas si hacen prediccion de demanda, Deteccion de perdidas, Asistencia de soporte tecnico, Documentacion y analisis de insepcciones, Agentes de despacho, Agentes de atencion para fallas masivas"
-            "para el sector de salud clasificas que tipo de IA usa o proporciona despues clasificas si hacen Diagnostico por imagenes asistido, modelos de riesgos de enfermedades, Resumenes de expediente clinico, generacion de notas medicas y documentacion, Agente administrativos, Agentes de soporte"
-            "Y LOS CASOS EN DONDE NO PROPORCIONEN IA NO LOS COLOQUES. DESCARTA ESAS EMPRESAS Y CUANDO LOS CASOS DE USO NO SEAN SOLO MENCIONA QUE NO APLICA"},
-            {"role": "user", "content": prompt}
-        ]
-    )
-    resumen = respuesta.choices[0].message.content
+    #respuesta = client.chat.completions.create(
+    #    model="gpt-5-mini",
+    #    messages=[
+    #        {"role": "system", "content": "Eres un asistente que genera resúmenes claros y concisos sobre empresas. Ademas clasificas con precision exlusivamente los siguientes sectores:Financiero, Telecomunicaciones,Retail o ecommerce,Energia y Salud. Donde en el sector finciero clasificaras que tipo de IA utiliza o proporciona la empresa para Fraude en tiempo real, Scoring crediticio, Agentes LLM para atencion y soporte bancario, Resumen de inteligencia o auditoria, Agentes AML con razonamiento, Agenetes financieros de autoservicios"
+    #        "para el sector de Telecomunicaciones clasificas que tipo de IA usa y proporciona y despues categorizas si hacen prediccion de churn, Optimizacion de Red, Agentes de atencion y soporte, Resumen inteligente de interacciones , Agentes de postventa multicanal, Agentes de operaciones de red"
+    #        "para el sector de Retail o ecommerce clasificas por el tipo de IA que usan o proporcionan ademas si este sector si realiza Forecasting de demanda, pricing dinamico,Product Description, Atencion o venta conversacional, Agentes de Operaciones en tienda, Agentes de Marketing automatizado"
+    #        "para el sector de energia clasificas que tipo de IA usa o proporciona y luego clasificas si hacen prediccion de demanda, Deteccion de perdidas, Asistencia de soporte tecnico, Documentacion y analisis de insepcciones, Agentes de despacho, Agentes de atencion para fallas masivas"
+    #        "para el sector de salud clasificas que tipo de IA usa o proporciona despues clasificas si hacen Diagnostico por imagenes asistido, modelos de riesgos de enfermedades, Resumenes de expediente clinico, generacion de notas medicas y documentacion, Agente administrativos, Agentes de soporte"
+    #        "Y LOS CASOS EN DONDE NO PROPORCIONEN IA NO LOS COLOQUES. DESCARTA ESAS EMPRESAS Y CUANDO LOS CASOS DE USO NO SEAN SOLO MENCIONA QUE NO APLICA"},
+    #        {"role": "user", "content": prompt}
+    #    ]
+    #)
+    #resumen = respuesta.choices[0].message.content
 
     # --- Analizar si es empresa de IA ---
-    info_ia = analizar_ia(nombre, resumen, contenido_web)
+    #info_ia = analizar_ia(nombre, resumen, contenido_web)
 
     resumenes.append({
         "Empresa": nombre,
         "URL": url,
-        "Resumen": resumen,
-        "IA_info": info_ia
+        "Resumen": ia.get("resumen",""),
+        "IA_info": ia
     })
 
     end_time = time.time()
     print(f"Línea {idx}: IA procesada en {end_time - start_time:.2f} segundos")
-    print(f"Línea {idx}: Resumen -> {resumen[:200]}...\n")
+    #print(f"Línea {idx}: Resumen -> {resumen[:200]}...\n")
 
 # --- Guardar resultados ---
 
@@ -253,17 +363,20 @@ for r in resumenes:
     ia = r["IA_info"]
 
     if isinstance(ia, dict) and "error" not in ia:
-        sectores = ", ".join(ia.get("sectores", []))
+        sectores = ia.get("sector","")
         tipo_ia = ia.get("tipo_ia", "")
-        
-        # Convertir casos de uso: dict -> texto "Sector: caso1, caso2"
+
+        # Casos de uso
         casos_dict = ia.get("casos_uso", {})
-        casos_uso = "; ".join(
-            [f"{sector}: {', '.join(casos)}" for sector, casos in casos_dict.items()]
-        )
+        if isinstance(casos_dict, dict):
+            casos_uso = "; ".join(
+                [f"{sector}: {', '.join(casos)}" for sector, casos in casos_dict.items()]
+            )
+        else:
+            casos_uso = casos_dict if casos_dict else ""
 
         descripcion = ia.get("descripcion_relevante", "")
-        proporciona_ia = ia.get("proporciona_ia", "")   # NUEVO
+        proporciona_ia = ia.get("proporciona_ia", "")
         nivel = ia.get("nivel_ajuste", "")
         observ = ia.get("observaciones", "")
     else:
@@ -271,7 +384,7 @@ for r in resumenes:
         tipo_ia = ""
         casos_uso = ""
         descripcion = ""
-        proporciona_ia = ""    # NUEVO
+        proporciona_ia = ""
         nivel = ""
         observ = ""
 
@@ -283,9 +396,10 @@ for r in resumenes:
         "Tipo_IA": tipo_ia,
         "Casos_Uso": casos_uso,
         "Descripcion_Relevante": descripcion[:50],
-        "Proporciona_IA": proporciona_ia,   # NUEVA COLUMNA
+        "Proporciona_IA": proporciona_ia,
         "Observaciones": observ[:50]
     })
+
 
 df_final = pd.DataFrame(filas)
 
